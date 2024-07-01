@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=<device-width>, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 50%;
+      }
+
+      td,
+      th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #dddddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Strip Bond Interest Calculator</h1>
+    <label for="start">Start Date</label>
+    <input name="start" type="date" id="start" />
+    <label for="end">End Date</label>
+    <input name="end" type="date" id="end" />
+    <br />
+    <br />
+    <label for="acb">ACB</label>
+    <input name="acb" type="number" id="acb" />
+    <label for="interest">Interest Rate(%)</label>
+    <input name="interest" type="number" id="interest" />
+
+    <button id="calculate">Calculate</button>
+
+    <br />
+    <br />
+
+    <table id="result">
+      <tr>
+        <th>Year</th>
+        <th>ACB Start</th>
+        <th>Annual Interest</th>
+        <th>ACB End</th>
+      </tr>
+    </table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script>
+      var calculateBtn = document.getElementById("calculate");
+      var start = document.getElementById("start");
+      var end = document.getElementById("end");
+      var acb = document.getElementById("acb");
+      var interest = document.getElementById("interest");
+      let resultTable = document.getElementById('result').getElementsByTagName('tbody')[0];
+
+      calculateBtn.onclick = function (e) {
+        moment.locale("en-US");
+        var startDate = start.value.split("-");
+        var endDate = end.value.split("-");
+        var startYear = parseInt(startDate[0]);
+        var endYear = parseInt(endDate[0]);
+        var numYears = endYear - startYear + 1;
+        var acbVal = parseFloat(acb.value);
+        var interestVal = parseFloat(interest.value) / 100;
+
+        var startYearLeap = moment(startDate).isLeapYear();
+        var endYearLeap = moment(endDate).isLeapYear();
+
+        var daysHeldFirstYear =
+          Math.abs(
+            moment(`${startYear}1231`, "YYYYMMDD").diff(
+              moment(start.value),
+              "days"
+            )
+          ) + 1;
+        var daysHeldInLastYear =
+          Math.abs(
+            moment(end.value).diff(moment(`${endYear}0101`, "YYYYMMDD"), "days")
+          ) + 1;
+
+        var result = {};
+
+        for (var i = 0; i < numYears; i++) {
+          if (i == 0) {
+            var annualInterest = startYearLeap
+              ? acbVal * interestVal * (daysHeldFirstYear / 366)
+              : acbVal * interestVal * (daysHeldFirstYear / 365);
+            result[(startYear + i).toString()] = {
+              acbStart: acbVal,
+              annualInterest: annualInterest,
+              acbEnd: acbVal + annualInterest,
+            };
+            acbVal = acbVal + annualInterest;
+          } else if (i == numYears - 1) {
+            var annualInterest = endYearLeap
+              ? acbVal * interestVal * (daysHeldInLastYear / 366)
+              : acbVal * interestVal * (daysHeldInLastYear / 365);
+            result[(startYear + i).toString()] = {
+              acbStart: acbVal,
+              annualInterest: annualInterest,
+              acbEnd: acbVal + annualInterest,
+            };
+            acbVal = acbVal + annualInterest;
+          } else {
+            var annualInterest = acbVal * interestVal;
+            result[(startYear + i).toString()] = {
+              acbStart: acbVal,
+              annualInterest: annualInterest,
+              acbEnd: acbVal + annualInterest,
+            };
+            acbVal = acbVal + annualInterest;
+          }
+        }
+
+        console.log(result);
+
+
+        for (var i = 1; i < resultTable.rows.length;){
+            resultTable.deleteRow(i);
+        }
+        
+        for (var key in result) {
+            let row = resultTable.insertRow();
+            let cell1 = row.insertCell(0);
+            let cell2 = row.insertCell(1);
+            let cell3 = row.insertCell(2);
+            let cell4 = row.insertCell(3);
+
+            cell1.innerHTML = key;
+            cell2.innerHTML = result[key]["acbStart"].toFixed(2);
+            cell3.innerHTML = result[key]["annualInterest"].toFixed(2);
+            cell4.innerHTML = result[key]["acbEnd"].toFixed(2);
+        }
+
+
+      };
+    </script>
+  </body>
+</html>
